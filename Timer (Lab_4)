@@ -1,0 +1,153 @@
+
+
+#include "stdafx.h"
+#include "Лаба4.h"
+#include <string>
+#include <iostream>
+#include <windows.h>
+#include <stdio.h>
+
+#define CLASSNAME "hhhffhfhhfhhff" 
+#define MAINNAME  "Main Window"
+
+LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
+
+
+char szClassName[] = "WindowsApp";
+
+
+
+int WINAPI WinMain(HINSTANCE hThisInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpszArgument,
+	int nFunsterStil)
+
+{
+
+	HWND hwnd;
+	MSG messages;
+	WNDCLASSEX wincl = { 0 };
+	wincl.hInstance = hThisInstance;
+	wincl.lpszClassName = CLASSNAME;
+	wincl.lpfnWndProc = WindowProcedure;
+
+	wincl.cbSize = sizeof(WNDCLASSEX);
+
+	wincl.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
+
+	if (!RegisterClassEx(&wincl))
+		return 0;
+	HMENU hm = LoadMenu(hThisInstance, MAKEINTRESOURCE(IDC_MY4));
+
+
+	int cx = (GetSystemMetrics(SM_CXSCREEN));
+	int cy = (GetSystemMetrics(SM_CYSCREEN));
+	int y = cy / 10;
+	int x = cx / 10;
+
+	hwnd = CreateWindow(CLASSNAME, MAINNAME, WS_OVERLAPPEDWINDOW,
+		x, y, cx - 2 * x, cy - 2 * y, NULL, hm, hThisInstance, NULL);
+
+	ShowWindow(hwnd, nFunsterStil);
+	UpdateWindow(hwnd);
+
+	while (GetMessage(&messages, NULL, 0, 0))
+	{
+
+		DispatchMessage(&messages);
+	}
+
+	return 0;
+}
+
+
+
+LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	char OurTex[] = "HAHAHAHAHAHAHAH";
+
+	HDC hdc;
+	PAINTSTRUCT ps;
+	RECT rect;
+	switch (message)
+	{
+	case WM_CREATE:
+		EnableMenuItem(GetMenu(hwnd), 1, MF_DISABLED);
+		SetTimer(hwnd, 1, 500, NULL);
+		break;
+	case WM_TIMER: {
+		LPARAM lp = (LPARAM)GetWindowLong(hwnd, GWL_USERDATA);
+		double start = (double)LOWORD(lp);
+
+		double end1 = start + 10;;
+		if (end1 >= 360)
+		{
+			end1 -= 360;
+		}
+		lp = MAKELPARAM(end1, HIWORD(lp));
+		SetWindowLong(hwnd, GWL_USERDATA, (LONG)lp);
+		InvalidateRect(hwnd, NULL, TRUE);
+	}
+		break;
+	case WM_COMMAND:
+		switch (wParam) {
+		case 0:
+			KillTimer(hwnd, 1);
+			DestroyWindow(hwnd);
+			break;
+		case 1:
+			KillTimer(hwnd, 1);
+			EnableMenuItem(GetMenu(hwnd), 1, MF_DISABLED);
+			EnableMenuItem(GetMenu(hwnd), 2, MF_ENABLED);
+			break;
+		case 2:
+			SetTimer(hwnd, 1, 500, NULL);
+			EnableMenuItem(GetMenu(hwnd), 1, MF_ENABLED);
+			EnableMenuItem(GetMenu(hwnd), 2, MF_DISABLED);
+			break;
+		}
+		break;
+
+	case WM_SIZE:
+
+		InvalidateRect(hwnd, NULL, TRUE);
+		break;
+	case WM_DESTROY: {
+		KillTimer(hwnd, 1);
+		PostQuitMessage(0);
+	}
+		break;
+	case WM_PAINT: {
+		hdc = BeginPaint(hwnd, &ps);
+		GetClientRect(hwnd, &rect);
+		LOGFONT coup = { 0 };
+		HANDLE hfnt, hfntPrev;
+		LPARAM lparam = (LPARAM)GetWindowLong(hwnd, GWL_USERDATA);
+		double angle = (double)LOWORD(lparam);
+
+
+		coup.lfHeight = 0;
+		coup.lfWeight = FW_NORMAL;
+		coup.lfEscapement = (long)angle * 50;
+		coup.lfOrientation = (long)angle * 30;
+		
+		hfnt = CreateFontIndirect(&coup);
+		hfntPrev = SelectObject(hdc, hfnt);
+
+		SetTextAlign(hdc, TA_CENTER | TA_BASELINE);
+		ExtTextOut(hdc, rect.right / 2, rect.bottom / 2, ETO_CLIPPED, &rect, (LPCSTR)&OurTex, 3, NULL);
+
+		SelectObject(hdc, hfntPrev);
+		DeleteObject(hfnt);
+		EndPaint(hwnd, &ps);
+	}
+		break;
+	
+	}
+	return DefWindowProc(hwnd, message, wParam, lParam);
+
+
+
+}
+
