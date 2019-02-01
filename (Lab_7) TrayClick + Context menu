@@ -1,0 +1,191 @@
+
+#include "stdafx.h"
+#include "Лаба 7.h"
+#include <shellapi.h>
+#include <windows.h>
+#include <malloc.h>
+
+#define WM_TRAYCLICK WM_USER - 1
+#define CLASSNAME "hhhffhfhhfhhff" 
+#define MAINNAME  "Main Window"
+#define MinNS 2
+#define MaxNS 26
+int N = 0;
+
+LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
+
+int WINAPI WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+{
+
+	HWND hwnd;
+	MSG messages;
+	WNDCLASS wincl = { 0 };
+	wincl.hInstance = hInstance;
+	wincl.lpszClassName = CLASSNAME;
+	wincl.lpfnWndProc = WindowProc;
+	wincl.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
+
+	if (!RegisterClass(&wincl))
+		return 0;
+
+	int cx = (GetSystemMetrics(SM_CXSCREEN));
+	int cy = (GetSystemMetrics(SM_CYSCREEN));
+	int y = cy / 10;
+	int x = cx / 10;
+
+	hwnd = CreateWindowEx(WS_EX_APPWINDOW, CLASSNAME, MAINNAME, WS_OVERLAPPEDWINDOW,
+		x, y, cx - 2 * x, cy - 2 * y, NULL, NULL, hInstance, NULL);
+
+	while (GetMessage(&messages, NULL, 0, 0))
+	{
+
+		DispatchMessage(&messages);
+	}
+
+	return 0;
+
+
+}
+
+BOOL CALLBACK DialogProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	NOTIFYICONDATA* nid = NULL;
+
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+	{
+
+		nid = (NOTIFYICONDATA*)lParam;
+		SetWindowLong(hWnd, GWL_USERDATA, (LONG)nid);
+		HWND hCombo1 = GetDlgItem(hWnd, IDC_COMBO1);
+		HWND hCombo2 = GetDlgItem(hWnd, IDC_COMBO2);
+
+		char b[3] = "";
+
+		for (int i = MinNS; i < MaxNS + 1; i++)
+		{
+			_itoa_s(i, b, 10);
+			SendMessage(hCombo1, CB_ADDSTRING, 0, (LPARAM)b);
+			SendMessage(hCombo2, CB_ADDSTRING, 0, (LPARAM)b);
+		}
+
+		return true;
+	}
+	case WM_CLOSE:
+	{
+		Shell_NotifyIcon(NIM_ADD, &(*nid));
+		EndDialog(hWnd, IDD_DIALOG1);
+		return FALSE;
+	}
+	case WM_COMMAND:
+	{
+		char str[255] = { 0 };
+		char *pSTR;
+		int nID = LOWORD(wParam);
+		if (nID == IDCANCEL)
+		{
+			Shell_NotifyIcon(NIM_ADD, (PNOTIFYICONDATAA)GetWindowLong(hWnd, GWL_USERDATA));
+			EndDialog(hWnd, IDD_DIALOG1);
+			return TRUE;
+		}
+		if (IDOK == nID)
+		{
+			TCHAR c[255] = { 0 }, d[255] = { 0 };
+			if ((GetDlgItemText(hWnd, IDC_IN, str, sizeof(str)) != 0) &&
+				(GetDlgItemText(hWnd, IDC_COMBO1, c, sizeof(c)) != 0) &&
+				(GetDlgItemText(hWnd, IDC_COMBO2, d, sizeof(d)) != 0))
+			{
+				int t = atoi(str);
+				if (t > 0) {
+
+					int u = atoi(c);
+					int h = atoi(d);
+					long int r = strtol(str, &pSTR, u);
+					_itoa_s(r, str, h);
+					SetDlgItemText(hWnd, IDC_OUT, str);
+				}
+
+			}
+			else
+				SetDlgItemText(hWnd, IDC_OUT, "ERROR");
+			return TRUE;
+
+		}
+
+		return true;
+	}
+
+	}
+	return FALSE;
+}
+
+LRESULT CALLBACK WindowProc(HWND Hwnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	NOTIFYICONDATA *nid1 = { 0 };
+
+	nid1 = new NOTIFYICONDATA();
+	(*nid1).cbSize = sizeof(nid1);
+	(*nid1).hWnd = Hwnd;
+	(*nid1).uID = 1;
+	(*nid1).uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+	(*nid1).uCallbackMessage = WM_TRAYCLICK;
+	lstrcpy((*nid1).szTip, "Lab7");
+
+
+	switch (Msg)
+	{
+
+	case WM_CREATE:
+		Shell_NotifyIcon(NIM_ADD, &(*nid1));
+	case WM_TRAYCLICK:
+	{
+		switch (lParam)
+		{
+		case WM_RBUTTONDOWN:
+		{
+			POINT pt;
+			GetCursorPos(&pt);
+			SetForegroundWindow(Hwnd);
+			HMENU trmenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDC_MY7));
+			HMENU smenu = GetSubMenu(trmenu, 0);
+			TrackPopupMenu(smenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, 0, Hwnd, NULL);
+			DestroyMenu(trmenu);
+			break;
+		}
+		}
+		return 0;
+	}
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case ID_OPEN:
+		{
+			Shell_NotifyIcon(NIM_DELETE, &(*nid1));
+			DialogBoxParam((NULL), MAKEINTRESOURCE(IDD_DIALOG1), Hwnd, DialogProc, LPARAM(nid1));
+			break;
+		}
+		case IDM_EXIT:
+		{
+			Shell_NotifyIcon(NIM_DELETE, &(*nid1));
+			DestroyWindow(Hwnd);
+			break;
+		}
+		}
+		return 0;
+	}
+	case WM_DESTROY:
+	{
+		Shell_NotifyIcon(NIM_DELETE, &(*nid1));
+		delete nid1;
+		PostQuitMessage(0);
+		break;
+	}
+	}
+	return::DefWindowProc(Hwnd, Msg, wParam, lParam);
+}
