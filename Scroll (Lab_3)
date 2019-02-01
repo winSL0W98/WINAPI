@@ -1,0 +1,427 @@
+#include <windows.h>
+#include "stdafx.h";
+#include "time.h"
+#include "resource.h"
+
+//#include "stdlib.h"
+//#include "stdio.h"
+
+#define PAGE 200
+#define LINE 24
+#define HOME 2424
+#define END 2525
+
+HINSTANCE hInstance;
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+
+	WNDCLASS wc = { 0 };
+	wc.lpfnWndProc = WindowProc;
+	wc.hInstance = hInstance;
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.lpszClassName = "Scrooooooooooooool";
+	//wc.style = CS_VREDRAW | CS_HREDRAW;
+	if (!RegisterClass(&wc))
+		return 0;
+
+	int cx = (GetSystemMetrics(SM_CXSCREEN));
+	int cy = (GetSystemMetrics(SM_CYSCREEN));
+	int y = cy / 10;
+	int x = cx / 10;
+	HMENU hmenu1 = LoadMenu(hInstance, MAKEINTRESOURCE(IDI_WINDOWSPROJECT1));
+	HWND hwndWindow = CreateWindow(wc.lpszClassName, "Scrolling",
+		WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL | WS_VISIBLE,
+		x, y, cx - 2 * x, cy - 2 * y, NULL, hmenu1, hInstance, NULL);
+	//ShowWindow(hwndWindow, nCmdShow);
+	//UpdateWindow(hwndWindow);
+	//////////////////////////////////////////////////////////////////////////////////////
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		DispatchMessage(&msg);
+	}
+	return 0;
+}
+//////////////////////////////////////////////////////////////////////////////////////
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+
+	const int N = 500;
+	static int X[N];
+	static int Y[N];
+	int M = 3000;
+	int R = 50;
+
+	switch (uMsg)
+	{
+		/////////////////////////////////////////////////////////////////////////////////////
+	case WM_CREATE:
+	{
+		srand(unsigned(time(NULL)));
+		int i;
+		for (i = 0; i < N; i++) {
+			X[i] = rand() % M;
+			Y[i] = rand() % M;
+		}
+
+		break;
+	}
+	//////////////////////////////////////////////////////////////////////
+	case WM_COMMAND:
+	{
+		//int Id = LOWORD(wParam);
+		switch (LOWORD(wParam))
+		{
+		case IDM_EXIT://выход
+		{
+			DestroyWindow(hwnd);
+			return 0;
+		}
+		case IDM_RECT://прямоугольник
+		{
+			SetWindowLong(hwnd, GWL_USERDATA, 1);
+			InvalidateRect(hwnd, NULL, TRUE);
+			EnableMenuItem(GetMenu(hwnd), IDM_CIRCLE, MF_ENABLED);
+			EnableMenuItem(GetMenu(hwnd), IDM_RECT, MF_GRAYED);
+			break;
+		}
+		case IDM_CIRCLE:///круг
+		{
+			SetWindowLong(hwnd, GWL_USERDATA, 0);
+			InvalidateRect(hwnd, NULL, TRUE);
+			EnableMenuItem(GetMenu(hwnd), IDM_RECT, MF_ENABLED);
+			EnableMenuItem(GetMenu(hwnd), IDM_CIRCLE, MF_GRAYED);
+
+			break;
+		}
+
+		}
+		break;
+	}
+	/////////////////////////////////////////////////////////////////////////////////////
+	case WM_SIZE:
+	{
+		RECT Rect;
+		GetClientRect(hwnd, &Rect);
+
+		SCROLLINFO hscroll = { 0 };
+		hscroll.cbSize = sizeof(SCROLLINFO);
+		hscroll.fMask = SIF_RANGE;
+		hscroll.nMax = M - Rect.right;
+		hscroll.nMin = 0;
+		hscroll.nPage = Rect.right;
+		SetScrollInfo(hwnd, SB_HORZ, &hscroll, TRUE);
+
+		SCROLLINFO vscroll = { 0 };
+		vscroll.cbSize = sizeof(SCROLLINFO);
+		vscroll.fMask = SIF_RANGE;
+		vscroll.nMax = M - Rect.bottom;
+		vscroll.nMin = 0;
+		vscroll.nPage = Rect.bottom;
+		SetScrollInfo(hwnd, SB_VERT, &vscroll, TRUE);
+		InvalidateRect(hwnd, NULL, true);
+		//UpdateWindow(hwnd);
+		return 0;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////
+	case WM_PAINT:
+	{
+
+		SCROLLINFO hscroll = { 0 }, vscroll = { 0 };
+		hscroll.cbSize = sizeof(SCROLLINFO);
+		hscroll.fMask = SIF_POS;
+		GetScrollInfo(hwnd, SB_HORZ, &hscroll);
+
+		vscroll.cbSize = sizeof(SCROLLINFO);
+		vscroll.fMask = SIF_POS;
+		GetScrollInfo(hwnd, SB_VERT, &vscroll);
+
+		RECT scRect, Rect, Buff;
+		PAINTSTRUCT Paint;
+
+		GetClientRect(hwnd, &Rect);
+
+		HDC hdc = BeginPaint(hwnd, &Paint);
+		HBRUSH NewBrush1 = CreateSolidBrush(RGB(255, 255, 0));
+		HBRUSH NewBrush2 = CreateSolidBrush(RGB(0, 255, 255));
+	
+
+		
+		
+		//void* k[2]() = { Ellipse, Rectangle};
+
+		
+		BOOL (__stdcall *k[2])(HDC hdc,
+			int left,
+			int top,
+			int right,
+			int bottom) = { Ellipse,Rectangle };
+
+		for (int i = 0; i < N; i++)
+		{
+			scRect.right = X[i] + R - hscroll.nPos;
+			scRect.left = X[i] - R - hscroll.nPos;
+			scRect.top = Y[i] - R - vscroll.nPos;
+			scRect.bottom = Y[i] + R - vscroll.nPos;
+
+			if (IntersectRect(&Buff, &Paint.rcPaint, &scRect))
+			{
+				if (i % 2 == 0) {
+					SelectObject(hdc, NewBrush1);
+				}
+				else {
+					SelectObject(hdc, NewBrush2);
+				}
+				
+				
+				int m = GetWindowLong(hwnd, GWL_USERDATA);
+				k[m](hdc,
+						scRect.left, scRect.top,
+						scRect.right, scRect.bottom);
+				
+			}
+		}
+		DeleteObject(NewBrush1);
+		DeleteObject(NewBrush2);
+
+		EndPaint(hwnd, &Paint);
+		return 0;
+	}
+	/////////////////////////////////////////////////////////////////////////////////////
+	case WM_HSCROLL:
+	{
+		SCROLLINFO hscroll = { 0 };
+		hscroll.cbSize = sizeof(SCROLLINFO);
+		hscroll.fMask = SIF_RANGE | SIF_POS | SIF_TRACKPOS;
+		GetScrollInfo(hwnd, SB_HORZ, &hscroll);
+
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+		int	xPos = hscroll.nPos;
+
+		switch (LOWORD(wParam))
+		{
+		case SB_LINERIGHT:
+		{
+			hscroll.nPos += LINE;
+			if (hscroll.nPos > hscroll.nMax) {
+				hscroll.nPos = hscroll.nMax;
+			}
+			break;
+
+		}
+		case SB_PAGERIGHT:
+		{
+			hscroll.nPos = hscroll.nPos + PAGE;
+			if (hscroll.nPos > hscroll.nMax) {
+				hscroll.nPos = hscroll.nMax;
+			}
+			break;
+		}
+		case SB_LINELEFT:
+		{
+			hscroll.nPos  -= LINE;
+			if (hscroll.nPos < 0) {
+				hscroll.nPos = hscroll.nMin;
+			}
+			break;
+		}
+		case SB_PAGELEFT:
+		{
+			hscroll.nPos -= PAGE;
+			if (hscroll.nPos < 0) {
+				hscroll.nPos = hscroll.nMin;
+			}
+			break;
+		}
+
+		case SB_THUMBTRACK:
+		{
+			hscroll.nPos = hscroll.nTrackPos;
+			break;
+		}
+		}
+
+		if (hscroll.nPos != xPos)
+		{
+			SetScrollInfo(hwnd, SB_HORZ, &hscroll, TRUE);
+			ScrollWindow(hwnd, xPos - hscroll.nPos, 0, NULL, NULL);
+
+			if (xPos - hscroll.nPos > 0)
+			{
+				rc.left = rc.right - (xPos - hscroll.nPos);
+			}
+			else
+			{
+				rc.right = rc.left + (xPos - hscroll.nPos);
+			}
+			InvalidateRect(hwnd, &rc, TRUE);
+
+		}
+		return 0;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	case WM_VSCROLL:
+	{
+		SCROLLINFO vscroll = { 0 };
+		vscroll.cbSize = sizeof(SCROLLINFO);
+		vscroll.fMask = SIF_RANGE | SIF_POS | SIF_TRACKPOS;
+		GetScrollInfo(hwnd, SB_VERT, &vscroll);
+
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+
+
+		int yPos = vscroll.nPos;
+		switch (LOWORD(wParam))
+		{
+		
+		case HOME:
+		{
+			
+			vscroll.nPos = vscroll.nMin;
+			
+			break;
+		}
+		case END:
+		{
+			vscroll.nPos = vscroll.nMax;
+			break;
+		}
+		case SB_LINEDOWN:
+		{
+			//b = line;
+			vscroll.nPos +=  LINE;
+			//pos = vscroll.nPos;
+			if (vscroll.nPos > vscroll.nMax) {
+				vscroll.nPos = vscroll.nMax;
+			}
+			break;
+		}
+		case SB_PAGEDOWN:
+		{
+			vscroll.nPos  += PAGE;
+			if (vscroll.nPos > vscroll.nMax) {
+				vscroll.nPos = vscroll.nMax;
+			}
+			break;
+		}
+
+		case SB_LINEUP:
+		{
+			vscroll.nPos  -= LINE;
+			if (vscroll.nPos < vscroll.nMin) {
+				vscroll.nPos = vscroll.nMin;
+			}
+			break;
+		}
+		case SB_PAGEUP:
+		{
+			vscroll.nPos -= PAGE;
+			if (vscroll.nPos < vscroll.nMin) {
+				vscroll.nPos = vscroll.nMin;
+			}
+
+			break;
+		}
+		case SB_THUMBTRACK:
+		{
+			vscroll.nPos = vscroll.nTrackPos;
+		
+			break;
+		}
+		}
+
+		if (vscroll.nPos != yPos)
+		{
+			SetScrollInfo(hwnd, SB_VERT, &vscroll, TRUE);
+			ScrollWindow(hwnd, 0, yPos - vscroll.nPos, NULL, NULL);
+			if (yPos - vscroll.nPos > 0)
+			{
+				rc.top = rc.bottom - (yPos - vscroll.nPos);
+			}
+			else
+			{
+				rc.bottom = rc.top + (yPos - vscroll.nPos);
+			}
+			InvalidateRect(hwnd, &rc, TRUE);
+		}
+
+
+
+		return 0;
+
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	case WM_KEYDOWN:
+		switch (LOWORD(wParam))
+		{
+		/////
+		case VK_END:
+		{
+			PostMessage(hwnd, WM_VSCROLL, END, NULL);
+			return 0;
+		}
+		case VK_HOME:
+		{
+			PostMessage(hwnd, WM_VSCROLL, HOME, NULL);
+			return 0;
+		}
+		//////
+		case VK_UP:
+		{
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEUP, NULL);
+			return 0;
+		}
+		case VK_DOWN:
+		{
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, NULL);
+			return 0;
+		}
+		case VK_RIGHT:
+		{
+			PostMessage(hwnd, WM_HSCROLL, SB_LINERIGHT, NULL);
+			return 0;
+		}
+		case VK_LEFT:
+		{
+			PostMessage(hwnd, WM_HSCROLL, SB_LINELEFT, NULL);
+			return 0;
+		}
+		
+		case VK_PRIOR:
+		{
+			PostMessage(hwnd, WM_VSCROLL, SB_PAGEUP, NULL);
+			return 0;
+		}
+		case VK_NEXT:
+		{
+ 			PostMessage(hwnd, WM_VSCROLL, SB_PAGEDOWN, NULL);
+			return 0;
+		}
+		case VK_ESCAPE:
+			DestroyWindow(hwnd);
+		default:
+			return 0;
+		}
+		/////////////////////////////////////////////////////////////////////////////////////
+	case WM_MOUSEWHEEL:
+	{
+		if ((int)wParam > 0)
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEUP, NULL);
+		else
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, NULL);
+
+		break;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	case WM_DESTROY:
+		//	DestroyMenu(GetMenu(hwnd));
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
