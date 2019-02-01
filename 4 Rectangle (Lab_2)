@@ -1,0 +1,248 @@
+
+#include "stdafx.h"
+#include "Win32Project2.h"
+#include "windowsx.h"
+
+#define CLASSNAME "Lab2"
+#define MAIN "MainW"
+
+int count = 0;
+
+HINSTANCE hInst;								
+LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+
+int APIENTRY WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+{
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	WNDCLASS wcex = { 0 };
+
+	wcex.lpfnWndProc = WndProc;
+	wcex.hInstance = hInstance;
+	wcex.lpszClassName = CLASSNAME;
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
+	if (!RegisterClass(&wcex))
+		return 0;
+
+	int CX = (GetSystemMetrics(SM_CXSCREEN));
+	int CY = (GetSystemMetrics(SM_CYSCREEN));
+	int X = CX / 50;
+	int Y = CY / 50;
+
+	HWND  hWnd = CreateWindow(wcex.lpszClassName, MAIN, WS_OVERLAPPEDWINDOW,
+		X, Y, CX - X * 2, CY - 2 * Y, NULL, NULL, hInstance, NULL);
+
+	if (hWnd == NULL)
+		return 0;
+
+	ShowWindow(hWnd, nCmdShow);
+
+
+
+	MSG msg;
+
+	
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		DispatchMessage(&msg);
+	}
+
+	return 0;
+}
+
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	static BOOL bMouseInside;
+
+	switch (message)
+	{
+	case WM_DESTROY:
+		if (FindWindow(CLASSNAME, MAIN) == hWnd) {
+			PostQuitMessage(0);
+		}
+		break;
+
+
+
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		RECT sizeW;
+		RECT rc1, rc2, rc3, rc4;
+
+		GetClientRect(hWnd, &sizeW);
+
+		rc1.right = sizeW.right / 2;
+		rc1.left = sizeW.left;
+		rc1.top = sizeW.top;
+		rc1.bottom = sizeW.bottom / 2;
+
+		rc2.right = sizeW.right;
+		rc2.left = rc1.right;
+		rc2.top = rc1.top;
+		rc2.bottom = rc1.bottom;
+
+		rc3.right = rc1.right;
+		rc3.left = rc1.left;
+		rc3.top = rc1.bottom;
+		rc3.bottom = sizeW.bottom;
+
+		rc4.right = rc2.right;
+		rc4.left = rc2.left;
+		rc4.top = rc2.bottom;
+		rc4.bottom = rc3.bottom;
+
+
+
+		////
+		Rectangle(hdc, rc1.left, rc1.top, rc1.right, rc1.bottom);
+		Rectangle(hdc, rc2.left, rc2.top, rc2.right, rc2.bottom);
+		Rectangle(hdc, rc3.left, rc3.top, rc3.right, rc3.bottom);
+		Rectangle(hdc, rc4.left, rc4.top, rc4.right, rc4.bottom);
+
+		////
+		HBRUSH hBrush, hBrush1;
+		hBrush = CreateSolidBrush(RGB(255, 255, 255));
+		SelectObject(hdc, hBrush);
+
+		switch (count)
+		{
+
+		case 1:
+			hBrush1 = CreateSolidBrush(RGB(255, 255, 0));
+			SelectObject(hdc, hBrush1);
+			Rectangle(hdc, rc1.left, rc1.top, rc1.right, rc1.bottom);
+			break;
+		case 2:
+			hBrush1 = CreateSolidBrush(RGB(255, 255, 0));
+			SelectObject(hdc, hBrush1);
+			Rectangle(hdc, rc2.left, rc2.top, rc2.right, rc2.bottom);
+			break;
+		case 3:
+			hBrush1 = CreateSolidBrush(RGB(255, 255, 0));
+			SelectObject(hdc, hBrush1);
+			Rectangle(hdc, rc3.left, rc3.top, rc3.right, rc3.bottom);
+			break;
+		case 4:
+			hBrush1 = CreateSolidBrush(RGB(255, 255, 0));
+			SelectObject(hdc, hBrush1);
+			Rectangle(hdc, rc4.left, rc4.top, rc4.right, rc4.bottom);
+			break;
+		case 0: 
+			Rectangle(hdc, rc1.left, rc1.top, rc1.right, rc1.bottom);
+			Rectangle(hdc, rc2.left, rc2.top, rc2.right, rc2.bottom);
+			Rectangle(hdc, rc3.left, rc3.top, rc3.right, rc3.bottom);
+			Rectangle(hdc, rc4.left, rc4.top, rc4.right, rc4.bottom);
+			break;
+		}
+	
+
+		EndPaint(hWnd, &ps);
+		break;
+	}
+
+	case WM_SIZE:
+	{
+		InvalidateRect(hWnd, NULL, TRUE);
+		break;
+	}
+
+	case WM_MOUSEMOVE:
+	{
+		POINT mouse;
+		mouse.x = GET_X_LPARAM(lParam);
+		mouse.y = GET_Y_LPARAM(lParam);
+
+		RECT sizeW;
+		RECT rc11, rc22, rc33, rc44;
+
+		GetClientRect(hWnd, &sizeW);
+
+		rc11.right = sizeW.right / 2;
+		rc11.left = sizeW.left;
+		rc11.top = sizeW.top;
+		rc11.bottom = sizeW.bottom / 2;
+
+		rc22.right = sizeW.right;
+		rc22.left = rc11.right;
+		rc22.top = rc11.top;
+		rc22.bottom = rc11.bottom;
+
+		rc33.right = rc11.right;
+		rc33.left = rc11.left;
+		rc33.top = rc11.bottom;
+		rc33.bottom = sizeW.bottom;
+
+		rc44.right = rc22.right;
+		rc44.left = rc22.left;
+		rc44.top = rc22.bottom;
+		rc44.bottom = rc33.bottom;
+
+		if (PtInRect(&rc11, mouse) != FALSE)
+		{
+			count = 1;
+			InvalidateRect(hWnd, &rc11, TRUE);
+		}
+		else {
+			InvalidateRect(hWnd, &rc11, true);
+		}
+		if (PtInRect((&rc22), mouse) == true) {
+			InvalidateRect(hWnd, &rc22, true);
+			count = 2;
+		}
+		else {
+			InvalidateRect(hWnd, &rc22, true);
+		}
+		if (PtInRect((&rc33), mouse) == true) {
+			InvalidateRect(hWnd, &rc33, true);
+			count = 3;
+		}
+		else {
+			InvalidateRect(hWnd, &rc33, true);
+		}
+		if (PtInRect((&rc44), mouse) == true) {
+			InvalidateRect(hWnd, &rc44, true);
+			count = 4;
+		}
+		else {
+			InvalidateRect(hWnd, &rc44, true);
+		}
+
+
+		
+		TRACKMOUSEEVENT tme;
+		tme.cbSize = sizeof(tme);
+		tme.hwndTrack = hWnd;
+		tme.dwFlags = TME_LEAVE;
+
+		TrackMouseEvent(&tme);
+
+		if (!bMouseInside)
+		{
+			bMouseInside = TRUE;
+			InvalidateRect(hWnd, NULL, FALSE);
+			UpdateWindow(hWnd);
+		}
+		break;
+		
+
+	}
+
+	case WM_MOUSELEAVE:
+		bMouseInside = FALSE;
+		count = 0;
+		InvalidateRect(hWnd, NULL, FALSE);
+		UpdateWindow(hWnd);
+		break;
+
+	}
+	return DefWindowProc(hWnd, message, wParam, lParam);
+
+}
