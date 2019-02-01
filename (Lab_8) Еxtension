@@ -1,0 +1,172 @@
+
+#include <Direct.h>
+#include <string>
+#include "stdio.h"
+#include "windows.h"
+#include "resource.h"
+#define CLASSNAME "hederrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+#define NAMEWINDOW "hederrrrrrrrrrrrrrr"
+#define NOEX "Без расширения"
+
+
+using namespace std;
+
+HINSTANCE hInstance;
+BOOL CALLBACK DlgProc(HWND hWnd, UINT dmsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+
+	WNDCLASS wc = { 0 };
+
+
+
+	wc.lpfnWndProc = WindowProc;
+	wc.hInstance = hInstance;
+	wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.lpszClassName = CLASSNAME;
+
+	if (!RegisterClass(&wc))
+		return 0;
+
+
+	HWND hwndWindow = CreateWindow(wc.lpszClassName, NAMEWINDOW,
+		WS_OVERLAPPEDWINDOW,
+		0, 0, 0, 0, NULL, NULL, hInstance, NULL);
+	//ShowWindow(hwndWindow, nCmdShow);
+
+
+	//////////////////////////////////////////////////////////////////////////////////////
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		DispatchMessage(&msg);
+	}
+
+	return 0;
+}
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+BOOL CALLBACK DlgProc(HWND hWnd, UINT dmsg, WPARAM wParam, LPARAM lParam)
+{
+
+
+	switch (dmsg)
+	{
+	case WM_INITDIALOG:
+	{
+		//1
+		char  buf1[MAX_PATH];
+		_getcwd(buf1, MAX_PATH);
+		SendMessage(GetDlgItem(hWnd, IDC_STAAAAATIC), WM_SETTEXT, 0, (LPARAM)buf1);
+		//2
+		DlgDirList(hWnd, buf1, IDC_LIST1, 0, DDL_READWRITE);
+		//3
+		int size = SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_GETCOUNT, 0, 0);
+		char  buf2[MAX_PATH][MAX_PATH];
+		for (int i = 0; i < size; i++) {
+			SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_GETTEXT, i, (LPARAM)buf2[i]);
+		}
+		//4
+		char *buf3[MAX_PATH];
+		for (int i = 0; i < size; i++) {
+
+			buf3[i] = strrchr(buf2[i], '.');
+			if (buf3[i]) {
+				if (SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_FINDSTRING, 1, (LPARAM)buf3[i]) == CB_ERR) {
+					SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_ADDSTRING, 0, (LPARAM)buf3[i]);
+				}
+			}
+		}
+		SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_ADDSTRING, 0, (LPARAM)NOEX);
+		return 0;
+	}
+
+	//////////////////////////////////////////
+	case WM_COMMAND:
+	{
+
+		switch (LOWORD(wParam))
+		{
+		case IDC_BUTTON1:
+		{
+			SetWindowText(GetDlgItem(hWnd, IDC_COMBO1), "");
+			SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_SETSEL, false, -1);
+			return 0;
+		}
+		}
+
+		switch (HIWORD(wParam))
+		{
+		case CBN_EDITCHANGE: {
+			SetWindowText(GetDlgItem(hWnd, IDC_COMBO1), "");
+			return 0;
+		}
+		case CBN_SELCHANGE: {
+
+			SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_SETSEL, false, -1);
+			char buf[1][MAX_PATH];
+			int ind = SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_GETCURSEL, 0, 0);
+			SendMessage(GetDlgItem(hWnd, IDC_COMBO1), CB_GETLBTEXT, ind, (LPARAM)&buf[0]);
+
+			int size = SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_GETCOUNT, 0, 0);
+			char  buf2[MAX_PATH][MAX_PATH];
+			for (int i = 0; i < size; i++) {
+				SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_GETTEXT, i, (LPARAM)buf2[i]);
+			}
+			char *buf3;
+			char arr[] = NOEX;
+			for (int i = 0; i < size; i++) {
+				buf3 = strrchr(buf2[i], '.');
+				if (buf3 == NULL) {
+					buf3 = arr;
+				}
+				if (!strcmp(buf3, buf[0])) {
+					SendMessage(GetDlgItem(hWnd, IDC_LIST1), LB_SETSEL, true, i);
+
+				}
+			}
+
+			break;
+		}
+		}
+
+
+		return 0;
+	}
+	///////////////////////////////////////////////////////
+	case WM_CLOSE:
+	{
+		EndDialog(hWnd, IDD_DIALOG1);
+		DestroyWindow(FindWindow(CLASSNAME, NAMEWINDOW));
+
+		return 0;
+	}
+	//////////
+
+	}
+	return false;
+}
+//////////////////////////////////////////////////////////////////////////////////////
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+		////////////////////////////////////////////////////////////////////
+	case WM_CREATE:
+	{
+		DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), hwnd, DlgProc);
+		return 0;
+	}
+	////////////////////////////////////////////////////////////////////
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
+	/////////////////////////////////////////
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
