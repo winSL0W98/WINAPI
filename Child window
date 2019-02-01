@@ -1,0 +1,140 @@
+
+
+#include "stdafx.h"
+#include "Лаба1.h"
+#define CLASSNAME "hhhffhfhhfhhff" 
+#define CHILDNAME "child Window"
+#define POPUPNAME "popup Window"
+#define MAINNAME  "Main Window"
+
+HINSTANCE hInst;								
+LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+
+int APIENTRY WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+{
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	WNDCLASS wcex = { 0 };
+
+	wcex.lpfnWndProc = WndProc;
+	wcex.hInstance = hInstance;
+	wcex.lpszClassName = CLASSNAME;
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.style = CS_DBLCLKS;
+
+
+	if (!RegisterClass(&wcex))
+		return 0;
+	/////////////////////11111
+
+	HWND  hWnd = CreateWindow(wcex.lpszClassName, MAINNAME, WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+
+	if (hWnd == NULL)
+		return 0;
+
+
+	/////////////////////222222
+
+
+	HWND  hWnd2 = CreateWindow(wcex.lpszClassName, CHILDNAME, WS_VISIBLE | WS_CHILD | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+		CW_USEDEFAULT, 0, 100, 100, hWnd, NULL, hInstance, NULL);
+
+	if (hWnd2 == NULL)
+		return 0;
+
+	//ShowWindow(hWnd2, nCmdShow);
+	/////////////////////33333333333
+
+	HWND  hWnd3 = CreateWindow(wcex.lpszClassName, POPUPNAME, WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+		GetSystemMetrics(SM_CXSCREEN) / 2 - 300, GetSystemMetrics(SM_CYSCREEN) / 2 - 100, 500, 200, hWnd, NULL, hInstance, NULL);
+
+	if (hWnd3 == NULL)
+		return 0;
+
+
+
+	ShowWindow(hWnd, nCmdShow);
+
+	MSG msg;
+
+
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		DispatchMessage(&msg);
+	}
+	return 0;
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+
+	switch (message)
+	{
+
+	case WM_DESTROY:
+		if (FindWindow(CLASSNAME, _T(MAINNAME)) == hWnd) {
+			PostQuitMessage(0);
+		}
+		break;
+	case WM_LBUTTONDOWN:
+		if (FindWindow(CLASSNAME, TEXT(POPUPNAME)) == hWnd) {
+			HWND buf = FindWindowEx(FindWindow(CLASSNAME, _T(MAINNAME)), NULL, CLASSNAME, CHILDNAME);
+			if (GetParent(buf) == FindWindow(CLASSNAME, _T(MAINNAME))) {
+				SetParent(buf, hWnd);
+			}
+		}
+		else if (FindWindow(CLASSNAME, _T(MAINNAME)) == hWnd) {
+			HWND buf = FindWindowEx(FindWindow(CLASSNAME, _T(POPUPNAME)), NULL, CLASSNAME, CHILDNAME);
+			if (GetParent(buf) == FindWindow(CLASSNAME, _T(POPUPNAME))) {
+				SetParent(buf, hWnd);
+			}
+		}
+
+		break;
+	case WM_RBUTTONDBLCLK:
+		if (FindWindow(CLASSNAME, _T(POPUPNAME)) == hWnd) {
+			if (GetWindowLong(hWnd, GWL_EXSTYLE) & WS_EX_TOPMOST) {
+				SetWindowPos(
+					hWnd,
+					HWND_NOTOPMOST,
+					0,
+					0,
+					0,
+					0,
+					SWP_NOMOVE | SWP_NOSIZE);
+				HWND buf = FindWindowEx(FindWindow(CLASSNAME, _T(MAINNAME)), NULL, CLASSNAME, CHILDNAME);
+				if (GetParent(buf) == FindWindow(CLASSNAME, _T(MAINNAME))) {
+					SetParent(buf, hWnd);
+				}
+
+			}
+			else {
+				SetWindowPos(
+					hWnd,
+					HWND_TOPMOST,
+					0,//GetSystemMetrics(SM_CXSCREEN) / 2 - 300,
+					0,//GetSystemMetrics(SM_CYSCREEN) / 2 - 100,
+					0,
+					0,
+					SWP_NOMOVE | SWP_NOSIZE);
+				HWND buf = FindWindowEx(FindWindow(CLASSNAME, _T(MAINNAME)), NULL, CLASSNAME, CHILDNAME);
+				if (GetParent(buf) == FindWindow(CLASSNAME, _T(MAINNAME))) {
+					SetParent(buf, hWnd);
+				}
+
+
+			}
+			break;
+
+
+		}
+
+	}
+
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
