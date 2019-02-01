@@ -1,0 +1,216 @@
+#include "stdafx.h"
+#include "Лаба 6.h"
+#include <string>
+#include <iostream>
+#include <windows.h>
+#include <stdio.h>
+
+#define CLASSNAME "hhhffhfhhfhhff" 
+#define MAINNAME  "Main Window"
+
+#define N 20
+
+LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
+
+
+int WINAPI WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+
+{
+
+	HWND hwnd;
+	MSG messages;
+	WNDCLASSEX wincl = { 0 };
+	wincl.hInstance = hInstance;
+	wincl.lpszClassName = CLASSNAME;
+	wincl.lpfnWndProc = WindowProcedure;
+	wincl.cbSize = sizeof(WNDCLASSEX);
+	wincl.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+
+
+	if (!RegisterClassEx(&wincl))
+		return 0;
+
+
+
+	int cx = (GetSystemMetrics(SM_CXSCREEN));
+	int cy = (GetSystemMetrics(SM_CYSCREEN));
+	int y = cy / 10;
+	int x = cx / 10;
+
+	hwnd = CreateWindow(CLASSNAME, MAINNAME, WS_OVERLAPPEDWINDOW,
+		x, y, cx - 2 * x, cy - 2 * y, NULL, NULL, hInstance, NULL);
+
+	ShowWindow(hwnd, nCmdShow);
+
+
+	while (GetMessage(&messages, NULL, 0, 0))
+	{
+
+		DispatchMessage(&messages);
+	}
+
+	return 0;
+}
+
+
+
+LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	switch (message) {
+	case WM_CREATE: {
+		HWND hBP, hRB;
+		int y = 10;
+		for (int i = 0; i < N; i++) {
+			hBP = CreateWindow("button", "Кнопка ", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 190, y, 80, 20, hwnd, (HMENU)(IDB + i), (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), NULL);
+			if (i == 1)
+				SendDlgItemMessage(hwnd,  i, BM_SETSTATE, TRUE, NULL);
+
+			hRB = CreateWindow("button", "radio", WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, 10, y, 10, 10, hwnd, (HMENU)(IDB + i + N), (HINSTANCE)GetWindowLong(hwnd, GWL_HINSTANCE), NULL);
+			if (i == 1)
+				SendDlgItemMessage(hwnd, i + N, BM_SETCHECK, BST_CHECKED, NULL);
+			y += 30;
+
+		}
+
+		return 0;
+	}
+
+	case WM_COMMAND:
+	{
+		for (int i = 0; i < N; i++) {
+			SendDlgItemMessage(hwnd,  i, BM_SETSTATE, FALSE, NULL);
+			SendDlgItemMessage(hwnd,  i + N, BM_SETCHECK, BST_UNCHECKED, NULL);
+		}
+		if (LOWORD(wParam) > N) {
+			SendDlgItemMessage(hwnd, LOWORD(wParam) - N, BM_SETSTATE, TRUE, NULL);
+			SendDlgItemMessage(hwnd, LOWORD(wParam), BM_SETCHECK, BST_CHECKED, NULL);
+		}
+		else
+		{
+			SendDlgItemMessage(hwnd, LOWORD(wParam), BM_SETSTATE, TRUE, NULL);
+			SendDlgItemMessage(hwnd, LOWORD(wParam) + N, BM_SETCHECK, BST_CHECKED, NULL);
+		}
+
+
+
+		return 0;
+	}
+	case WM_SIZE:
+	{
+		RECT Rect;
+		GetClientRect(hwnd, &Rect);
+
+		SCROLLINFO vscroll = { 0 };
+		vscroll.cbSize = sizeof(SCROLLINFO);
+		vscroll.fMask = SIF_RANGE;
+		vscroll.nMax = 700 - Rect.bottom;
+		vscroll.nMin = 0;
+		vscroll.nPage = Rect.bottom;
+		SetScrollInfo(hwnd, SB_VERT, &vscroll, TRUE);
+		InvalidateRect(hwnd, NULL, true);
+		return 0;
+	}
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
+	case WM_VSCROLL:
+	{
+		int LINE = 10;
+		int PAGE = 10;
+		SCROLLINFO vscroll = { 0 };
+		vscroll.cbSize = sizeof(SCROLLINFO);
+		vscroll.fMask = SIF_RANGE | SIF_POS | SIF_TRACKPOS;
+		GetScrollInfo(hwnd, SB_VERT, &vscroll);
+
+		RECT rc;
+		GetClientRect(hwnd, &rc);
+
+
+		int yPos = vscroll.nPos;
+		switch (LOWORD(wParam))
+		{
+
+
+		case SB_LINEDOWN:
+		{
+
+			//b = line;
+			vscroll.nPos += LINE;
+			//pos = vscroll.nPos;
+			if (vscroll.nPos > vscroll.nMax) {
+				vscroll.nPos = vscroll.nMax;
+			}
+			break;
+		}
+		case SB_PAGEDOWN:
+		{
+			vscroll.nPos += PAGE;
+			if (vscroll.nPos > vscroll.nMax) {
+				vscroll.nPos = vscroll.nMax;
+			}
+			break;
+		}
+
+		case SB_LINEUP:
+		{
+			vscroll.nPos -= LINE;
+			if (vscroll.nPos < vscroll.nMin) {
+				vscroll.nPos = vscroll.nMin;
+			}
+			break;
+		}
+		case SB_PAGEUP:
+		{
+			vscroll.nPos -= PAGE;
+			if (vscroll.nPos < vscroll.nMin) {
+				vscroll.nPos = vscroll.nMin;
+			}
+
+			break;
+		}
+		case SB_THUMBTRACK:
+		{
+			vscroll.nPos = vscroll.nTrackPos;
+
+			break;
+		}
+		}
+		if (vscroll.nPos != yPos)
+		{
+			SetScrollInfo(hwnd, SB_VERT, &vscroll, TRUE);
+			ScrollWindow(hwnd, 0, yPos - vscroll.nPos, NULL, NULL);
+			if (yPos - vscroll.nPos > 0)
+			{
+				rc.top = rc.bottom - (yPos - vscroll.nPos);
+			}
+			else
+			{
+				rc.bottom = rc.top + (yPos - vscroll.nPos);
+			}
+			InvalidateRect(hwnd, &rc, TRUE);
+		}
+		return 0;
+	}
+
+	case WM_MOUSEWHEEL:
+	{
+		if ((int)wParam > 0)
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEUP, NULL);
+		else
+			PostMessage(hwnd, WM_VSCROLL, SB_LINEDOWN, NULL);
+
+		break;
+	}
+
+	}
+
+	return DefWindowProc(hwnd, message, wParam, lParam);
+
+
+
+}
+
