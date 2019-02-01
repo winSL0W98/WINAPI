@@ -1,0 +1,164 @@
+
+#include "stdafx.h"
+#include "Laba_5.h"
+#include <string>
+#include <iostream>
+#include <windows.h>
+#include <stdio.h>
+
+#define CLASSNAME "hhhffhfhhfhhff" 
+#define MAINNAME  "Main Window"
+#define SIZE 256
+
+LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
+
+
+int WINAPI WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+
+{
+
+	HWND hwnd;
+	MSG messages;
+	WNDCLASSEX wincl = { 0 };
+
+	wincl.hInstance = hInstance;
+	wincl.lpszClassName = CLASSNAME;
+	wincl.lpfnWndProc = WindowProcedure;
+	wincl.cbSize = sizeof(WNDCLASSEX);
+	wincl.hbrBackground = CreatePatternBrush(LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_BITMAP1)));
+
+
+	if (!RegisterClassEx(&wincl))
+		return 0;
+	HMENU hm = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_POP));
+
+
+
+	int cx = (GetSystemMetrics(SM_CXSCREEN));
+	int cy = (GetSystemMetrics(SM_CYSCREEN));
+	int y = cy / 10;
+	int x = cx / 10;
+
+	hwnd = CreateWindow(CLASSNAME, MAINNAME, WS_OVERLAPPEDWINDOW,
+		x, y, cx - 2 * x, cy - 2 * y, NULL, hm, hInstance, NULL);
+	SetWindowLong(hwnd, GWL_USERDATA, 1);
+	ShowWindow(hwnd, nCmdShow);
+
+
+	while (GetMessage(&messages, NULL, 0, 0))
+	{
+
+		DispatchMessage(&messages);
+	}
+	DeleteObject(hm);
+	return 0;
+}
+
+
+
+LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	HMENU Hpop = CreatePopupMenu();
+	switch (message) {
+	case WM_COMMAND: {
+		switch (wParam) {
+
+		case IDB_BITMAP1: {
+			HBRUSH hbr = CreatePatternBrush(LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP1)));
+
+
+			HBRUSH hOld = (HBRUSH)GetClassLong(hwnd, GCL_HBRBACKGROUND);
+			DeleteObject(hOld);
+
+			SetClassLong(hwnd, GCL_HBRBACKGROUND, (LONG)hbr);
+			InvalidateRect(hwnd, NULL, TRUE);	
+			SetWindowLong(hwnd, GWL_USERDATA, 1);
+			return 0;
+
+		}
+		
+		case IDB_BITMAP2: {
+			HBRUSH hbr = CreatePatternBrush(LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP2)));
+
+
+			HBRUSH hOld = (HBRUSH)GetClassLong(hwnd, GCL_HBRBACKGROUND);
+			DeleteObject(hOld);
+
+			SetClassLong(hwnd, GCL_HBRBACKGROUND, (LONG)hbr);
+			InvalidateRect(hwnd, NULL, TRUE);			
+			SetWindowLong(hwnd, GWL_USERDATA, 2);
+			return 0;
+		}
+		case IDM_EXIT:
+			DeleteObject(GetMenu(hwnd));
+			DestroyWindow(hwnd);
+			return 0;
+		default:
+			char Text[SIZE] = { 0 };
+			LoadString(NULL, LOWORD(wParam), Text, SIZE);
+			SetWindowText(hwnd, Text);
+			return 0;
+		
+		}
+	}
+
+	case WM_RBUTTONDOWN: {
+
+		POINT p;
+		p.x = LOWORD(lParam);
+		p.y = HIWORD(lParam);
+		ClientToScreen(hwnd, &p);
+
+		TCHAR sz[SIZE], str1[SIZE];
+		GetWindowText(hwnd, str1, SIZE);
+		for (int i = 100; i < 65536; i++)
+		{
+			if (LoadString(GetModuleHandle(NULL), i, sz, sizeof(sz) / sizeof(TCHAR)) != 0)
+			{
+				if (strcmp(sz, str1) == 0)
+				{
+					AppendMenu(Hpop, MF_STRING, i, sz);
+					EnableMenuItem(Hpop, i, MF_GRAYED);
+				}
+				else
+				{
+					AppendMenu(Hpop, MF_STRING, i, sz);
+					EnableMenuItem(Hpop, i, MF_ENABLED);
+				}
+			}
+		}
+
+		AppendMenu(Hpop, MFT_SEPARATOR, NULL, NULL);
+		AppendMenu(Hpop, MF_STRING | MF_POPUP, IDB_BITMAP1, "BITMAP1");
+		AppendMenu(Hpop, MF_STRING | MF_POPUP, IDB_BITMAP2, "BITMAP2");
+		if (GetWindowLong(hwnd, GWL_USERDATA) == 1)
+		{
+			EnableMenuItem(Hpop, IDB_BITMAP1, MF_GRAYED);
+			EnableMenuItem(Hpop, IDB_BITMAP2, MF_ENABLED);
+		}
+		else
+		{
+			EnableMenuItem(Hpop, IDB_BITMAP2, MF_GRAYED);
+			EnableMenuItem(Hpop, IDB_BITMAP1, MF_ENABLED);
+		}
+		TrackPopupMenu(Hpop,
+			TPM_CENTERALIGN | TPM_TOPALIGN | TPM_VERNEGANIMATION,
+			p.x, p.y, 0, hwnd, NULL);
+		return 0;
+	}
+
+	case WM_DESTROY: {
+		DeleteObject(GetMenu(hwnd));
+		PostQuitMessage(0);
+		return 0;
+	}
+	}
+	return DefWindowProc(hwnd, message, wParam, lParam);
+
+
+
+}
+
